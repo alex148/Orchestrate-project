@@ -1,0 +1,6 @@
+website_core_homepage:
+    path:     /
+    defaults: { _controller: websiteCoreBundle:Core:index }
+
+
+

@@ -1,0 +1,4 @@
+services:
+  orchestrate.service:
+        class: 'website\CoreBundle\Service\OrchestrateService'
+        arguments: [%orchestrate-api-key%, @logger]
