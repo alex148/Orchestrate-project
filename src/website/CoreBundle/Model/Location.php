@@ -32,7 +32,7 @@ class Location implements \JsonSerializable
     }
 
     public static function arrayToLocation($array){
-        $location = new Location()
+
         if($array != null){
 
         }
