@@ -17,9 +17,9 @@ class Location implements \JsonSerializable
 
     private $longitude;
 
-    public function __construct($key, $latitude, $longitude)
+    public function __construct($latitude, $longitude)
     {
-        $this->key = $key;
+
         $this->latitude = $latitude;
         $this->longitude = $longitude;
     }
