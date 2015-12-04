@@ -2,8 +2,8 @@
 /**
  * Created by IntelliJ IDEA.
  * User: Alexandre
- * Date: 12/11/2015
- * Time: 12:31
+ * Date: 03/12/2015
+ * Time: 22:22
  */
 
 namespace website\CoreBundle\Model;
@@ -11,48 +11,23 @@ namespace website\CoreBundle\Model;
 
 class Location implements \JsonSerializable
 {
-    private $key;
 
     private $latitude;
-
     private $longitude;
 
-    public function __construct($latitude, $longitude)
+    public function __construct()
     {
-
-        $this->latitude = $latitude;
-        $this->longitude = $longitude;
+        $this->latitude = 0;
+        $this->longitude = 0;
     }
 
     public function jsonSerialize() {
         return [
-            'latitude' => $this->getLatitude(),
-            'longitude' => $this->getLongitude()
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
         ];
     }
 
-    public static function arrayToLocation($array){
-
-        if($array != null){
-
-        }
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getKey()
-    {
-        return $this->key;
-    }
-
-    /**
-     * @param mixed $key
-     */
-    public function setKey($key)
-    {
-        $this->key = $key;
-    }
     /**
      * @return mixed
      */
@@ -70,7 +45,7 @@ class Location implements \JsonSerializable
     }
 
     /**
-     * @return mixed
+     * @return int
      */
     public function getLongitude()
     {
@@ -78,11 +53,14 @@ class Location implements \JsonSerializable
     }
 
     /**
-     * @param mixed $longitude
+     * @param int $longitude
      */
     public function setLongitude($longitude)
     {
         $this->longitude = $longitude;
     }
+
+
+
 
 }

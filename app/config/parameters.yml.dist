@@ -14,6 +14,6 @@ parameters:
     mailer_host:       127.0.0.1
     mailer_user:       ~
     mailer_password:   ~
-    orchestrate-api-key : 3e44b455-bc77-4a60-9bfa-f00236db8562
+    orchestrate-api-key : c8916c44-14ef-4418-983a-f0faf891a372
     # A secret key that's used to generate certain security-related tokens
     secret:            ThisTokenIsNotSoSecretChangeIt

@@ -8,11 +8,15 @@
 namespace website\CoreBundle\Service;
 
 use SocalNick\Orchestrate\Client;
+use SocalNick\Orchestrate\Exception\ClientException;
 use SocalNick\Orchestrate\KvPutOperation;
 use SocalNick\Orchestrate\KvPostOperation;
 use SocalNick\Orchestrate\KvFetchOperation;
 use SocalNick\Orchestrate\KvDeleteOperation;
 use SocalNick\Orchestrate\SearchOperation;
+use SocalNick\Orchestrate\GraphFetchOperation;
+use SocalNick\Orchestrate\GraphPutOperation;
+use SocalNick\Orchestrate\GraphDeleteOperation;
 use Symfony\Component\Config\Definition\Exception\Exception;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
@@ -25,8 +29,14 @@ class OrchestrateService
 
     public function __construct($orchestrate_api_key,Logger $logger)
     {
-        $this->orchestrate = new Client($orchestrate_api_key);
-        $this->logger = $logger;
+        try {
+            $this->orchestrate = new Client($orchestrate_api_key);
+            $this->logger = $logger;
+        }catch(Exception $e){
+            $logger->error($e->getMessage());
+        }catch(ClientException $e){
+            $logger->error($e->getMessage());
+        }
 
     }
 
@@ -39,16 +49,19 @@ class OrchestrateService
      */
     public function Put($collection, $key, $object)
     {
+        $this->logger->debug('put an object with the key ['.$key.'] in the collection ['.$collection.']');
         try {
             $this->logger->info('Create PutOperation');
             $putOp = new kvPutOperation($collection, $key, json_encode($object,JSON_PRETTY_PRINT));
             $result = $this->orchestrate->execute($putOp);
-            $this->logger->info('Put Successful [ref : '.$result->getRef().' ]');
-            return $result->getRef();
+            $this->logger->debug('Put Successful [ref : '.$result->getRef().' ]');
+            return true;
         }catch(Exception $e){
             $this->logger->error($e->getMessage());
+        }catch(ClientException $e){
+            $this->logger->error($e->getMessage());
         }
-        return null;
+        return false;
     }
 
     /**
@@ -58,13 +71,14 @@ class OrchestrateService
      * @return auto-generated key or null
      */
     public function Post($collection, $object){
+        $this->logger->debug('put an object in the collection ['.$collection.']');
         try{
-            $this->logger->info('Create PostOperation');
             $postOp = new kvPostOperation($collection,json_encode($object,JSON_PRETTY_PRINT));
             $result = $this->orchestrate->execute($postOp);
-            $this->logger->info('Post Successful [key : '.$result->getRef().' ]');
             return $result->getKey();
         }catch(Exception $e){
+            $this->logger->error($e->getMessage());
+        }catch(ClientException $e){
             $this->logger->error($e->getMessage());
         }
         return null;
@@ -77,13 +91,14 @@ class OrchestrateService
      * @return object or null
      */
     public function Get($collection, $key){
+        $this->logger->debug('get an object with the key ['.$key.'] in the collection ['.$collection.']');
         try{
-            $this->logger->info('Create GetOperation');
             $getOp = new KvFetchOperation($collection,$key);
             $result = $this->orchestrate->execute($getOp);
-            $this->logger->info('Get Successful');
-            return $result->getValue();
+            return $result;
         }catch(Exception $e){
+            $this->logger->error($e->getMessage());
+        }catch(ClientException $e){
             $this->logger->error($e->getMessage());
         }
         return null;
@@ -94,19 +109,22 @@ class OrchestrateService
      * @param $collection : object's collection
      * @param $key : key of the object to delete
      * @param $purge : if true, permanently removes data from the database
-     * @return true if deleted false else
+     * @return true if deleted else false
      */
     public function Delete($collection, $key, $purge = null){
+        $this->logger->debug('delete an object with the key ['.$key.'] from the collection ['.$collection.'] with purge ['.$purge.']');
         try{
             if($purge != null){
                 $deleteOp = new KvDeleteOperation($collection, $key, $purge);
             }else{
                 $deleteOp = new KvDeleteOperation($collection, $key);
             }
-             return $this->orchestrate->execute($deleteOp);
-           }catch(Exception $e){
+            return $this->orchestrate->execute($deleteOp);
+        }catch(Exception $e){
                 $this->logger->error($e->getMessage());
-           }
+        }catch(ClientException $e){
+            $this->logger->error($e->getMessage());
+        }
         return false;
     }
 
@@ -120,16 +138,100 @@ class OrchestrateService
      * @return array of results or null
      */
     public function Search($collection, $query, $limit,$offset, $sort){
+        $this->logger->debug('search an object in the collection ['.$collection.']
+        with query ['.$query.'] limit ['.$limit.'] offset ['.$offset.'] sort ['.$sort.']');
         try{
             $searchOp = new SearchOperation($collection,$query, $limit, $offset, $sort);
             $searchResult = $this->orchestrate->execute($searchOp);
-           // $total = $searchResult->totalCount(); // 8
             if($searchResult->count() > 0){
                 return $searchResult->getValue()['results'];
             }
         }catch(Exception $e){
             $this->logger->error($e->getMessage());
+        }catch(ClientException $e){
+            $this->logger->error($e->getMessage());
         }
         return null;
+    }
+
+    /**
+     *
+     * Used to get links from an object
+     * @param $collection : object's collection
+     * @param $key : object's key
+     * @param $relationship : relationship type
+     * @param $limit : could be null
+     * @param $offset : could be null
+     * @return array of results or null
+     */
+    public function GetLinks($collection, $key, $relationship, $limit=null, $offset=null){
+        $this->logger->debug('get links in the collection ['.$collection.']
+        for the key ['.$key.']  with the relationship ['.$relationship.'] limit ['.$limit.'] offset ['.$offset.']');
+        try{
+            if($limit != null && $offset != null){
+                $graphFetchOp = new GraphFetchOperation($collection,$key,$relationship,$limit, $offset);
+                $graphResult = $this->orchestrate->execute($graphFetchOp);
+            }else{
+                $graphFetchOp = new GraphFetchOperation($collection,$key,$relationship);
+                $graphResult = $this->orchestrate->execute($graphFetchOp);
+            }
+
+            return $graphResult;
+        }catch(Exception $e){
+            $this->logger->error($e->getMessage());
+        }catch(ClientException $e){
+            $this->logger->error($e->getMessage());
+        }
+        return null;
+    }
+
+    /**
+     *
+     * Used to add a link between 2 objects from collections
+     * @param $collectionSource
+     * @param $keySource
+     * @param $relationship
+     * @param $collectionToAdd
+     * @param $keyToAdd
+     * @return true or false
+     */
+    public function AddLink($collectionSource, $keySource, $relationship, $collectionToAdd, $keyToAdd){
+        $this->logger->debug('add the link ['.$collectionToAdd.']['.$keyToAdd.'] in the collection ['.$collectionSource.']
+        for the key ['.$keySource.']  with the relationship ['.$relationship.']');
+        try{
+            $graphPutOp = new GraphPutOperation($collectionSource, $keySource, $relationship, $collectionToAdd, $keyToAdd);
+            $result = $this->orchestrate->execute($graphPutOp);
+            return $result;
+        }catch(Exception $e){
+            $this->logger->error($e->getMessage());
+        }catch(ClientException $e){
+            $this->logger->error($e->getMessage());
+        }
+        return false;
+    }
+
+    /**
+     *
+     * Used to delete a link between 2 objects from collections
+     * @param $collectionSource
+     * @param $keySource
+     * @param $relationship
+     * @param $collectionToDelete
+     * @param $keyToDelete
+     * @return true or false
+     */
+    public function DeleteLink($collectionSource, $keySource, $relationship, $collectionToDelete, $keyToDelete){
+        $this->logger->debug('remove the link ['.$collectionToDelete.']['.$keyToDelete.'] in the collection ['.$collectionSource.']
+        for the key ['.$keySource.']  with the relationship ['.$relationship.']');
+        try{
+            $graphDeleteOp = new GraphDeleteOperation($collectionSource, $keySource, $relationship, $collectionToDelete, $keyToDelete);
+            $result = $this->orchestrate->execute($graphDeleteOp);
+            return $result;
+        }catch(Exception $e){
+            $this->logger->error($e->getMessage());
+        }catch(ClientException $e){
+            $this->logger->error($e->getMessage());
+        }
+        return false;
     }
 }

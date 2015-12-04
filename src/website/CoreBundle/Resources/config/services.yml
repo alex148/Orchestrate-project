@@ -2,3 +2,18 @@ services:
   orchestrate.service:
         class: 'website\CoreBundle\Service\OrchestrateService'
         arguments: [%orchestrate-api-key%, @logger]
+  user.service:
+          class: 'website\CoreBundle\Service\UserService'
+          arguments: [@logger, @orchestrate.service, @address.service, @preference.service, @detail.service, @location.service ]
+  address.service:
+            class: 'website\CoreBundle\Service\AddressService'
+            arguments: [@logger]
+  preference.service:
+              class: 'website\CoreBundle\Service\PreferenceService'
+              arguments: [@logger]
+  detail.service:
+                class: 'website\CoreBundle\Service\DetailService'
+                arguments: [@logger, @orchestrate.service]
+  location.service:
+                  class: 'website\CoreBundle\Service\LocationService'
+                  arguments: [@logger, @orchestrate.service]
