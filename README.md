@@ -1,4 +1,4 @@
-website
+Orchestrate-Project
 =======
 
-A Symfony project created on November 10, 2015, 3:08 pm.
+Début de projet Symfony : objectif : faire communiquer une base NoSQL gérée par Orchestrate.io avec un projet symfony2
